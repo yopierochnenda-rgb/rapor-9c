@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Nilai Rapor Kelas 9C</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{font-family:Arial;background:#f1f5f9}
+.box{max-width:520px;margin:30px auto;background:#fff;padding:20px;border-radius:12px}
+.header{text-align:center;border-bottom:2px solid #2563eb;padding-bottom:15px;margin-bottom:15px}
+.header img{width:80px;margin-bottom:10px}
+.header h1{font-size:18px;margin:5px 0;color:#2563eb}
+.header h2{font-size:15px;margin:2px 0}
+.header p{font-size:13px;color:#555;margin:0}
+
+input,button{width:100%;padding:10px;margin-top:10px}
+button{background:#2563eb;color:#fff;border:none;border-radius:6px}
+
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #ccc;padding:8px;text-align:left}
+th{background:#2563eb;color:#fff;width:40%}
+
+.foto-wrap{text-align:center;margin-bottom:10px}
+.foto{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #2563eb}
+
+.badge{text-align:center;font-size:18px;font-weight:bold;margin-bottom:10px}
+
+.catatan{
+ margin-top:15px;
+ padding:12px;
+ background:#f8fafc;
+ border-left:4px solid #2563eb;
+ font-size:14px;
+}
+
+.ttd{
+ margin-top:30px;
+ text-align:right;
+ font-size:14px;
+}
+
+#err{color:red;text-align:center}
+.btns{display:flex;gap:10px;margin-top:15px}
+
+@media print{
+ button,input{display:none}
+ body{background:#fff}
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div class="box" id="loginBox">
+<div class="header">
+ <img src="logo.png">
+ <h1>SMP NEGERI 1 CIBINGBIN</h1>
+ <h2>Nilai Rapor Kelas 9C</h2>
+ <p>Semester Ganjil | Tahun Pelajaran 2025/2026</p>
+</div>
+
+<input id="nisnInput" placeholder="Masukkan NISN">
+<button onclick="login()">Lihat Nilai Rapor</button>
+<div id="err"></div>
+</div>
+
+<!-- HASIL -->
+<div class="box" id="hasilBox" style="display:none">
+<div class="header">
+ <img src="logo.png">
+ <h1>SMP NEGERI 1 CIBINGBIN</h1>
+ <h2>Hasil Nilai Rapor Siswa</h2>
+ <p>Kelas 9C | Semester Ganjil 2025/2026</p>
+</div>
+
+<div class="foto-wrap">
+ <img id="foto" class="foto" src="default.jpg">
+</div>
+
+<div id="badge" class="badge"></div>
+
+<table>
+<tr><th>NISN</th><td id="nisn"></td></tr>
+<tr><th>Nama</th><td id="nama"></td></tr>
+<tr><th>Kelas</th><td id="kelas"></td></tr>
+<tr><th>Nilai</th><td id="nilai"></td></tr>
+<tr><th>Ranking</th><td id="rank"></td></tr>
+</table>
+
+<!-- CATATAN WALI KELAS -->
+<div class="catatan" id="catatan"></div>
+
+<!-- TANDA TANGAN -->
+<div class="ttd">
+ Cibingbin, 24 Desember 2025<br><br><br>
+ <b>Dendi Riyadi, S.Pd</b><br>
+ NIP. 199012072022211011
+</div>
+
+<div class="btns">
+ <button onclick="window.print()">🖨 Cetak</button>
+ <button onclick="logout()">🚪 Logout</button>
+</div>
+</div>
+
+<script>
+const data = JSON.parse(localStorage.getItem("dataRanking")) || [];
+
+function catatanWali(nama, rank){
+ if(rank === 1){
+  return `Ananda <b>${nama}</b> menunjukkan prestasi yang sangat membanggakan dengan meraih peringkat 1 di kelas. Terus pertahankan semangat belajar, kedisiplinan, dan sikap rendah hati.`;
+ }
+ if(rank === 2){
+  return `Ananda <b>${nama}</b> menunjukkan hasil belajar yang sangat baik dan berhasil meraih peringkat 2. Terus tingkatkan konsistensi belajar agar prestasi semakin optimal.`;
+ }
+ if(rank === 3){
+  return `Ananda <b>${nama}</b> telah menunjukkan usaha belajar yang baik dan berhasil meraih peringkat 3. Tingkatkan lagi kedisiplinan dan fokus belajar.`;
+ }
+ return `Ananda <b>${nama}</b> telah mengikuti kegiatan pembelajaran dengan cukup baik. Diharapkan dapat meningkatkan semangat belajar dan tanggung jawab agar prestasi ke depan lebih baik.`;
+}
+
+function login(){
+ const nisn = nisnInput.value.trim();
+ if(!data.length) return err.innerText="Data belum tersedia";
+
+ const s = data.find(x=>String(x.nisn)===nisn);
+ if(!s) return err.innerText="NISN tidak ditemukan";
+
+ loginBox.style.display="none";
+ hasilBox.style.display="block";
+
+ nisn.innerText=s.nisn;
+ nama.innerText=s.nama;
+ kelas.innerText=s.kelas;
+ nilai.innerText=s.nilai;
+ rank.innerText=s.rank;
+
+ foto.src = s.foto
+  ? "https://drive.google.com/thumbnail?id="+s.foto
+  : "default.jpg";
+
+ badge.innerHTML =
+  s.rank==1?"🥇 Ranking 1":
+  s.rank==2?"🥈 Ranking 2":
+  s.rank==3?"🥉 Ranking 3":
+  "⭐ Ranking "+s.rank;
+
+ catatan.innerHTML =
+  "<b>Catatan Wali Kelas:</b><br>"+catatanWali(s.nama, s.rank);
+}
+
+function logout(){
+ hasilBox.style.display="none";
+ loginBox.style.display="block";
+ nisnInput.value="";
+ err.innerText="";
+}
+</script>
+
+</body>
+</html>

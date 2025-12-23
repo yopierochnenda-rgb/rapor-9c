@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Admin Nilai Rapor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#f1f5f9}
+.box{max-width:1000px;margin:30px auto;background:#fff;padding:20px;border-radius:10px}
+h3{margin-top:0;text-align:center}
+input,button{padding:10px;margin-top:8px}
+button{background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #ccc;padding:8px;text-align:center}
+th{background:#2563eb;color:#fff}
+.form-grid{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+ gap:10px;
+ margin-top:10px;
+}
+img.foto{width:40px;height:40px;border-radius:50%;object-fit:cover}
+hr{margin:20px 0}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN ADMIN -->
+<div class="box" id="loginBox">
+<h3>Login Admin</h3>
+<input id="user" placeholder="Username">
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="err" style="color:red;text-align:center"></p>
+</div>
+
+<!-- ADMIN -->
+<div class="box" id="adminBox" style="display:none">
+
+<h3>Input Nilai Siswa</h3>
+
+<!-- INPUT MANUAL -->
+<b>➕ Input Manual</b>
+<div class="form-grid">
+<input id="mNisn" placeholder="NISN">
+<input id="mNama" placeholder="Nama">
+<input id="mKelas" placeholder="Kelas">
+<input id="mNilai" placeholder="Nilai" type="number">
+<input id="mFoto" placeholder="Link / ID Google Drive Foto">
+</div>
+<button onclick="tambahManual()">Tambah Siswa</button>
+
+<hr>
+
+<!-- UPLOAD EXCEL -->
+<b>📤 Upload Excel</b><br>
+<input type="file" id="file" accept=".xlsx">
+<button onclick="loadExcel()">Upload Excel</button>
+
+<!-- TABEL -->
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Foto</th>
+<th>NISN</th>
+<th>Nama</th>
+<th>Kelas</th>
+<th>Nilai</th>
+<th>Hapus</th>
+</tr>
+</thead>
+<tbody id="list"></tbody>
+</table>
+
+</div>
+
+<script>
+let siswa = [];
+
+/* LOGIN */
+function login(){
+ if(user.value==="admin" && pass.value==="12345"){
+  loginBox.style.display="none";
+  adminBox.style.display="block";
+  loadLocal();
+ } else err.innerText="Login salah";
+}
+
+/* AMBIL ID GOOGLE DRIVE */
+function getDriveId(link){
+ if(!link) return "";
+ link=String(link).trim();
+ let m=link.match(/\/d\/([^/]+)/);
+ if(m) return m[1];
+ let m2=link.match(/id=([^&]+)/);
+ if(m2) return m2[1];
+ return link;
+}
+
+/* LOAD DARI LOCALSTORAGE */
+function loadLocal(){
+ const d = JSON.parse(localStorage.getItem("dataRanking")) || [];
+ siswa = d.map(s=>({
+  nisn:s.nisn,
+  nama:s.nama,
+  kelas:s.kelas,
+  nilai:Number(s.nilai),
+  foto:s.foto
+ }));
+ render();
+}
+
+/* TAMBAH MANUAL */
+function tambahManual(){
+ if(!mNisn.value||!mNama.value||!mNilai.value){
+  alert("Lengkapi data");
+  return;
+ }
+
+ siswa.push({
+  nisn:mNisn.value.trim(),
+  nama:mNama.value.trim(),
+  kelas:mKelas.value.trim(),
+  nilai:Number(mNilai.value),
+  foto:getDriveId(mFoto.value)
+ });
+
+ mNisn.value=mNama.value=mKelas.value=mNilai.value=mFoto.value="";
+ render();
+}
+
+/* UPLOAD EXCEL */
+function loadExcel(){
+ const f=file.files[0];
+ if(!f) return alert("Pilih file Excel");
+
+ const r=new FileReader();
+ r.onload=e=>{
+  const wb=XLSX.read(e.target.result,{type:"binary"});
+  const ws=wb.Sheets[wb.SheetNames[0]];
+  const data=XLSX.utils.sheet_to_json(ws);
+
+  data.forEach(d=>{
+   siswa.push({
+    nisn:String(d.NISN).trim(),
+    nama:d.NAMA,
+    kelas:d.KELAS,
+    nilai:Number(d.NILAI),
+    foto:getDriveId(d.FOTO)
+   });
+  });
+
+  render();
+ };
+ r.readAsBinaryString(f);
+}
+
+/* HAPUS */
+function hapus(i){
+ if(confirm("Hapus siswa?")){
+  siswa.splice(i,1);
+  render();
+ }
+}
+
+/* RENDER + RANK */
+function render(){
+ siswa.sort((a,b)=>b.nilai-a.nilai);
+ list.innerHTML="";
+
+ siswa.forEach((s,i)=>{
+  list.innerHTML+=`
+  <tr>
+   <td>${i+1}</td>
+   <td><img class="foto"
+     src="https://drive.google.com/thumbnail?id=${s.foto}"
+     onerror="this.src='default.jpg'"></td>
+   <td>${s.nisn}</td>
+   <td>${s.nama}</td>
+   <td>${s.kelas}</td>
+   <td>${s.nilai}</td>
+   <td><button onclick="hapus(${i})">❌</button></td>
+  </tr>`;
+ });
+
+ localStorage.setItem(
+  "dataRanking",
+  JSON.stringify(siswa.map((s,i)=>({...s,rank:i+1})))
+ );
+}
+</script>
+
+</body>
+</html>
