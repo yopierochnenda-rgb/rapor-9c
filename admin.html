@@ -2,120 +2,121 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Cek Rapor Siswa Kelas 9C</title>
+<title>Dashboard Admin</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f0f6ff;
-  margin: 0;
-  padding: 20px;
+body{
+  font-family:Arial;
+  background:#f0f6ff;
+  padding:20px;
 }
-.container {
-  max-width: 500px;
-  margin: auto;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+.box{
+  max-width:700px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
 }
-h2 {
-  text-align: center;
-  color: #0b5ed7;
+h2{text-align:center;color:#0b5ed7}
+input,button{
+  padding:10px;
+  margin-top:8px;
+  width:100%;
 }
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  font-size: 16px;
+button{
+  background:#0b5ed7;
+  color:#fff;
+  border:none;
+  border-radius:5px;
 }
-button {
-  background: #0b5ed7;
-  color: white;
-  border: none;
-  border-radius: 5px;
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse;
 }
-button:hover {
-  background: #084298;
-}
-.hasil {
-  margin-top: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-.status {
-  font-size: 22px;
-  font-weight: bold;
-  color: green;
-}
-.footer {
-  text-align: center;
-  font-size: 12px;
-  color: #666;
-  margin-top: 20px;
+th,td{
+  border:1px solid #ccc;
+  padding:8px;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
-  <h2>CEK RAPOR SISWA<br>KELAS 9C</h2>
+<div class="box">
+  <h2>DASHBOARD ADMIN</h2>
 
-  <input type="text" id="nisn" placeholder="Masukkan NISN" />
+  <button onclick="logout()">Logout</button>
 
-  <button onclick="cekRapor()">Cek Rapor</button>
+  <hr>
 
-  <div id="hasil" class="hasil" style="display:none;"></div>
+  <input id="nisn" placeholder="NISN">
+  <input id="nama" placeholder="Nama">
+  <input id="kelas" placeholder="Kelas">
+  <input id="nilai" placeholder="Nilai">
+  <input id="foto" placeholder="Link Foto (opsional)">
+  <button onclick="tambah()">Tambah Data</button>
 
-  <div class="footer">
-    SMP Negeri 1 Cibingbin<br>
-    Tahun Pelajaran 2024/2025
-  </div>
+  <table id="tabel">
+    <thead>
+      <tr>
+        <th>NISN</th><th>Nama</th><th>Kelas</th><th>Nilai</th><th>Aksi</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
-const SHEET_ID = "1BCxVPh9XYDPRVCVx54Y0GskfwomYeMqSd6KWD3nBHOg";
-const SHEET_NAME = "Sheet1";
-const URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
+const SHEET_API = "https://sheetdb.io/api/v1/YOUR_API_ID"; 
+// GANTI dengan SheetDB kamu
 
-async function cekRapor() {
-  const nisn = document.getElementById("nisn").value.trim();
-  const hasilDiv = document.getElementById("hasil");
+if(localStorage.getItem("adminLogin")!=="yes"){
+  location.href="admin.html";
+}
 
-  if (!nisn) {
-    alert("Silakan masukkan NISN");
-    return;
-  }
+function logout(){
+  localStorage.removeItem("adminLogin");
+  location.href="admin.html";
+}
 
-  hasilDiv.style.display = "none";
+async function load(){
+  const res = await fetch(SHEET_API);
+  const data = await res.json();
+  const tb = document.querySelector("#tabel tbody");
+  tb.innerHTML="";
+  data.forEach(d=>{
+    tb.innerHTML+=`
+      <tr>
+        <td>${d.nisn}</td>
+        <td>${d.nama}</td>
+        <td>${d.kelas}</td>
+        <td>${d.nilai}</td>
+        <td><button onclick="hapus('${d.id}')">Hapus</button></td>
+      </tr>`;
+  });
+}
 
-  try {
-    const res = await fetch(URL);
-    const data = await res.json();
+async function tambah(){
+  const data={
+    nisn:nisn.value,
+    nama:nama.value,
+    kelas:kelas.value,
+    nilai:nilai.value,
+    foto:foto.value
+  };
+  await fetch(SHEET_API,{method:"POST",headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  load();
+}
 
-    const siswa = data.find(s => s.nisn === nisn);
-
-    if (!siswa) {
-      alert("Data siswa tidak ditemukan");
-      return;
-    }
-
-    hasilDiv.innerHTML = `
-      <p><b>Nama:</b> ${siswa.nama}</p>
-      <p><b>Kelas:</b> ${siswa.kelas}</p>
-      <p><b>Rata-rata:</b> ${siswa.rata}</p>
-      <p class="status">${siswa.status}</p>
-      <p>${siswa.catatan || ""}</p>
-    `;
-
-    hasilDiv.style.display = "block";
-
-  } catch (error) {
-    alert("Gagal mengambil data");
-    console.error(error);
+async function hapus(id){
+  if(confirm("Hapus data?")){
+    await fetch(`${SHEET_API}/${id}`,{method:"DELETE"});
+    load();
   }
 }
+
+load();
 </script>
 </body>
 </html>
