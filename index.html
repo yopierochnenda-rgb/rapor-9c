@@ -2,114 +2,101 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Nilai Rapor Kelas 9C</title>
+<title>Cek Nilai Siswa</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-body{font-family:Arial;background:#f1f5f9}
-.box{max-width:520px;margin:30px auto;background:#fff;padding:20px;border-radius:12px}
-.header{text-align:center;border-bottom:2px solid #2563eb;padding-bottom:15px;margin-bottom:15px}
-.header img{width:80px}
-.header h1{font-size:18px;color:#2563eb;margin:5px 0}
-.header h2{font-size:15px;margin:2px 0}
-.header p{font-size:13px;color:#555;margin:0}
-input,button{width:100%;padding:10px;margin-top:10px}
-button{background:#2563eb;color:#fff;border:none;border-radius:6px}
-.foto{width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #2563eb}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{border:1px solid #ccc;padding:8px;text-align:left}
-th{background:#2563eb;color:white;width:40%}
-.catatan{margin-top:15px;padding:12px;background:#f8fafc;border-left:4px solid #2563eb}
-.ttd{text-align:right;margin-top:30px}
-@media print{input,button{display:none}}
+body{
+  font-family:Arial, sans-serif;
+  background:#f0f6ff;
+  padding:20px;
+}
+.container{
+  max-width:500px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,.1);
+}
+h2{text-align:center;color:#0b5ed7}
+input,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  font-size:16px;
+}
+button{
+  background:#0b5ed7;
+  color:#fff;
+  border:none;
+  border-radius:5px;
+}
+#hasil{
+  margin-top:20px;
+  display:none;
+  text-align:center;
+}
+img{
+  width:120px;
+  height:150px;
+  object-fit:cover;
+  border:1px solid #ccc;
+}
 </style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tabletop.js/1.5.4/tabletop.min.js"></script>
 </head>
+
 <body>
+<div class="container">
+  <h2>CEK NILAI SISWA</h2>
 
-<div class="box" id="loginBox">
-<div class="header">
-<img src="logo.png">
-<h1>SMP NEGERI 1 CIBINGBIN</h1>
-<h2>Nilai Rapor Kelas 9C</h2>
-<p>Semester Ganjil | Tahun Pelajaran 2025/2026</p>
-</div>
+  <input type="text" id="nisn" placeholder="Masukkan NISN">
+  <button onclick="cekData()">Cek Data</button>
 
-<input id="nisnInput" placeholder="Masukkan NISN">
-<button onclick="login()">Lihat Nilai</button>
-<p id="err" style="color:red;text-align:center"></p>
-</div>
-
-<div class="box" id="hasilBox" style="display:none">
-<div class="header">
-<img src="logo.png">
-<h1>SMP NEGERI 1 CIBINGBIN</h1>
-<h2>Hasil Nilai Rapor</h2>
-</div>
-
-<center><img id="foto" class="foto" src="default.jpg"></center>
-
-<table>
-<tr><th>NISN</th><td id="nisn"></td></tr>
-<tr><th>Nama</th><td id="nama"></td></tr>
-<tr><th>Kelas</th><td id="kelas"></td></tr>
-<tr><th>Nilai</th><td id="nilai"></td></tr>
-<tr><th>Ranking</th><td id="rank"></td></tr>
-</table>
-
-<div class="catatan" id="catatan"></div>
-
-<div class="ttd">
-Cibingbin, 24 Desember 2025<br><br>
-<b>Dendi Riyadi, S.Pd</b><br>
-NIP. 199012072022211011
-</div>
-
-<button onclick="window.print()">🖨 Cetak</button>
+  <div id="hasil"></div>
 </div>
 
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTWYdBFOBaitNteoJEVplOG1JiL2EP58lVzRTXN1w6eySMPZ95uqxWrHbwbAhGH1-oxk42r4scgTgSB/pubhtml";
-let data=[];
+const SHEET_ID = "1BCxVPh9XYDPRVCVx54Y0GskfwomYeMqSd6KWD3nBHOg";
+const SHEET_NAME = "Sheet1";
+const URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 
-Tabletop.init({
- key: SHEET_URL,
- simpleSheet:true,
- callback:(rows)=>{
-  data=rows.map(r=>({
-   nisn:String(r.nisn).trim(),
-   nama:r.nama,
-   kelas:r.kelas,
-   nilai:Number(r.nilai),
-   foto:r.foto
-  }));
-  data.sort((a,b)=>b.nilai-a.nilai);
-  data.forEach((s,i)=>s.rank=i+1);
- }
-});
+async function cekData(){
+  const nisn = document.getElementById("nisn").value.trim();
+  const hasil = document.getElementById("hasil");
 
-function login(){
- const v=nisnInput.value.trim();
- const s=data.find(x=>x.nisn===v);
- if(!s) return err.innerText="NISN tidak ditemukan";
+  if(!nisn){
+    alert("Masukkan NISN");
+    return;
+  }
 
- loginBox.style.display="none";
- hasilBox.style.display="block";
+  try{
+    const res = await fetch(URL);
+    const data = await res.json();
 
- nisn.innerText=s.nisn;
- nama.innerText=s.nama;
- kelas.innerText=s.kelas;
- nilai.innerText=s.nilai;
- rank.innerText=s.rank;
+    const siswa = data.find(s => s.nisn === nisn);
 
- let m=s.foto.match(/\/d\/([^/]+)/);
- foto.src=m?"https://drive.google.com/thumbnail?id="+m[1]:"default.jpg";
+    if(!siswa){
+      alert("Data tidak ditemukan");
+      return;
+    }
 
- catatan.innerHTML="<b>Catatan Wali Kelas:</b><br>Ananda <b>"+s.nama+
- "</b> telah mengikuti pembelajaran dengan baik. Terus tingkatkan prestasi belajar.";
+    const foto = siswa.foto
+      ? siswa.foto
+      : "https://via.placeholder.com/120x150?text=Foto";
+
+    hasil.innerHTML = `
+      <img src="${foto}">
+      <p><b>Nama:</b> ${siswa.nama}</p>
+      <p><b>Kelas:</b> ${siswa.kelas}</p>
+      <p><b>Nilai:</b> ${siswa.nilai}</p>
+    `;
+    hasil.style.display="block";
+
+  }catch(e){
+    alert("Gagal mengambil data");
+    console.error(e);
+  }
 }
 </script>
-
 </body>
 </html>
