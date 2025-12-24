@@ -30,6 +30,7 @@ button{
   color:#fff;
   border:none;
   border-radius:5px;
+  cursor:pointer;
 }
 #hasil{
   margin-top:20px;
@@ -41,6 +42,7 @@ img{
   height:150px;
   object-fit:cover;
   border:1px solid #ccc;
+  margin-bottom:10px;
 }
 </style>
 </head>
@@ -60,35 +62,46 @@ const SHEET_ID = "1BCxVPh9XYDPRVCVx54Y0GskfwomYeMqSd6KWD3nBHOg";
 const SHEET_NAME = "Sheet1";
 const URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 
+function normalNISN(x){
+  return String(x).replace(/^0+/, '');
+}
+
 async function cekData(){
-  const nisn = document.getElementById("nisn").value.trim();
+  const nisnInput = document.getElementById("nisn").value.trim();
   const hasil = document.getElementById("hasil");
 
-  if(!nisn){
+  if(!nisnInput){
     alert("Masukkan NISN");
     return;
   }
+
+  hasil.style.display="none";
+  hasil.innerHTML = "Memuat...";
 
   try{
     const res = await fetch(URL);
     const data = await res.json();
 
-    const siswa = data.find(s => s.nisn === nisn);
+    const cari = normalNISN(nisnInput);
+
+    const siswa = data.find(s =>
+      normalNISN(s.nisn || s.NISN) === cari
+    );
 
     if(!siswa){
-      alert("Data tidak ditemukan");
+      alert("Data siswa tidak ditemukan");
       return;
     }
 
-    const foto = siswa.foto
-      ? siswa.foto
+    const foto = siswa.foto || siswa.FOTO
+      ? (siswa.foto || siswa.FOTO)
       : "https://via.placeholder.com/120x150?text=Foto";
 
     hasil.innerHTML = `
       <img src="${foto}">
-      <p><b>Nama:</b> ${siswa.nama}</p>
-      <p><b>Kelas:</b> ${siswa.kelas}</p>
-      <p><b>Nilai:</b> ${siswa.nilai}</p>
+      <p><b>Nama:</b> ${siswa.nama || siswa.Nama}</p>
+      <p><b>Kelas:</b> ${siswa.kelas || siswa.Kelas}</p>
+      <p><b>Nilai:</b> ${siswa.nilai || siswa.Nilai}</p>
     `;
     hasil.style.display="block";
 
